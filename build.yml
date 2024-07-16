@@ -1,0 +1,38 @@
+stages:
+  - build
+
+variables:
+  MAVEN_REPO_LOCAL: .m2/repository
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/$MAVEN_REPO_LOCAL"
+  GIT_STRATEGY: clone
+
+.build:
+  stage: build
+  image: "openjdk:21"
+  cache:
+    key: ${CI_PROJECT_NAME}
+    paths:
+      - $MAVEN_REPO_LOCAL
+  before_script:
+    - if [ -f .m2/settings.xml ]; then export MAVEN_ARGS="$MAVEN_ARGS -s .m2/settings.xml"; fi
+  tags:
+    - school2024_team4
+
+build:
+  extends: .build
+  script:
+    - ./mvnw spring-boot:build-image -D'spring-boot.build-image.imageName=localhost:32000/${project.artifactId}:${project.version}' -Dspring-boot.build-image.publish=true
+  only:
+    refs:
+      - main
+
+build_mr:
+  extends: .build
+  script:
+    - ./mvnw install
+  artifacts:
+    when: always
+    paths:
+      - target/*.jar
+  only:
+    - merge_requests

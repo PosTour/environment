@@ -1,0 +1,23 @@
+stages:
+  - deploy
+
+variables:
+  KUBECONFIG: /tmp/client.config
+
+.deploy:
+  stage: deploy
+  image:
+    name: "bitnami/kubectl:1.25.15"
+    entrypoint: [""]
+  before_script:
+    - NAMESPACE="${NAMESPACE:=default}"
+  tags:
+    - school2024_team4
+
+deploy:
+  extends: .deploy
+  script:
+    - kubectl -n $NAMESPACE delete -f deploy/application.yaml || echo Нечего удалять
+    - kubectl -n $NAMESPACE wait --for=delete -f deploy/application.yaml
+    - kubectl -n $NAMESPACE apply -f deploy/application.yaml
+    - kubectl -n $NAMESPACE wait deploy --for=condition=Available --all --timeout=180s
